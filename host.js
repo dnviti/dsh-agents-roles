@@ -1,8 +1,4 @@
-﻿// dsh-agents-roles — Host half (dynamic Cordis plugin function body).
-// Source of ladd-1/pkg-21 (current running package).
-
-module.exports = function () {
-return {
+﻿module.exports = {
   name: 'dsh-agents-roles',
   apply(ctx) {
     // ------------------------------------------------------------------
@@ -862,6 +858,6 @@ return {
       console.log('[dsh-agents-roles] active. providers=' + (provs.join(', ') || 'none') + ' enabled=' + state.enabled + ' roles=' + state.tiers.length + ' workflow=' + workflowActive());
     })();
   },
-};
+
 };
 

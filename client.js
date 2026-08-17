@@ -1,8 +1,4 @@
-﻿// dsh-agents-roles — Client half (dynamic Cordis plugin function body).
-// Source of ladd-1/pkg-21 (current running package).
-
-module.exports = function () {
-return {
+﻿module.exports = {
   name: 'dsh-agents-roles',
   inject: ['slots', 'timer'],
   apply(ctx) {
@@ -651,6 +647,6 @@ return {
       RolesModelSelect,
     ));
   },
-};
+
 };
 

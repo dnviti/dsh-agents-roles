@@ -1,7 +1,23 @@
 ﻿{
-    "private":  true,
-    "description":  "LLM agents roles ladder for DSH (oh-my-pi roles): per-role model routing, effort, auto vision/category routing, workflow integration, chat model badges.",
-    "name":  "dsh-agents-roles",
     "version":  "0.1.0",
+    "repository":  {
+                       "type":  "git",
+                       "url":  "git+https://github.com/dnviti/dsh-agents-roles.git"
+                   },
+    "files":  [
+                  "host.js",
+                  "client.js",
+                  "cordis.patch.yml",
+                  "README.md",
+                  "LICENSE"
+              ],
+    "name":  "dsh-agents-roles",
+    "private":  true,
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "./cordis.patch.yml"
+                           }
+            },
+    "description":  "LLM agents roles ladder for DSH (oh-my-pi roles): per-role model routing, effort, auto vision/category routing, workflow integration, chat model badges.",
     "main":  "host.js"
 }

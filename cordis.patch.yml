@@ -1,0 +1,7 @@
+﻿# dsh-agents-roles — deployment plugin row.
+# Registering this row loads the HOST half at startup (routing, escalation,
+# auto-routing, RPC, tools). The CLIENT half (settings page, composer pill,
+# response badges) activates when the plugin runs as a dynamic plugin in a
+# session — see README.md "Installation".
+- id: agents-roles
+  name: dsh-agents-roles
