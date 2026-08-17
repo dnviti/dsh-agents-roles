@@ -1,7 +1,9 @@
-﻿# dsh-agents-roles — deployment plugin row.
-# Registering this row loads the HOST half at startup (routing, escalation,
-# auto-routing, RPC, tools). The CLIENT half (settings page, composer pill,
-# response badges) activates when the plugin runs as a dynamic plugin in a
-# session — see README.md "Installation".
-- id: agents-roles
-  name: dsh-agents-roles
+# dsh-agents-roles — deployment bundle patch.
+# Registers the dsh-agents-roles loader entry when the package is installed as
+# a profile bundle layer (`dsh plugin --profile <name> -- add ...`; applied
+# automatically from package.json `dsh.bundle.patch`). Do NOT also append this
+# row to the profile's own cordis.patch.yml — a duplicate loader entry id
+# fails boot.
+- insert:
+    - id: dsh-agents-roles
+      name: dsh-agents-roles

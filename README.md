@@ -1,75 +1,98 @@
 # dsh-agents-roles
 
-A DeepSeek Harness dynamic Cordis plugin: an **LLM agents roles ladder** derived from [oh-my-pi](https://omp.sh/docs/roles) default roles — Default, Small, Slow, Vision, Plan, Designer, Commit, Tiny, Task, Advisor.
+An **LLM agents roles ladder** for DeepSeek Harness, derived from the
+[oh-my-pi](https://omp.sh/docs/roles) default roles — Default, Small, Slow,
+Vision, Plan, Designer, Commit, Tiny, Task, Advisor. Each role maps to a
+`provider/model` (plus an optional reasoning effort); the ladder routes every
+agent call to the right role's model.
 
-Each role maps to a `provider/model` (plus an optional reasoning effort) configured by the user; the ladder routes every agent call to the right role's model.
+![version](https://img.shields.io/badge/version-0.1.0-blue)
 
 - **Repository:** https://github.com/dnviti/dsh-agents-roles.git
-- **Clone:** `git clone https://github.com/dnviti/dsh-agents-roles.git`
 
 ## Features
 
-- **Per-role routing** — `agent/request` waterfall rewrites each agent call to its role's model and effort (effort applied only when the model offers that level).
-- **Escalation** — `llm/stream` / `agent/request-error` climb to the next configured role on failure.
-- **Auto routing** — user messages route themselves: images → the configured **vision** role (the harness image gate passes because the composer auto-selects the vision model and the model declares `input: [text, image]`); text is classified against a **categories** map (word match) to its role; unmatched messages use the base role.
-- **Workflow integration** — when the workflows plugin is enabled, workflow agents are auto-routed by role (`@role:<id>` forces a role, `@no-role` bypasses).
-- **Chat UX** — per-response model badge; the composer model pill is replaced by a **read-only roles-ladder pill** (same UI as the standard selector, display-only) when enabled; plain model select fallback when disabled.
-- **Settings page** — clean role list + popup editors, categories popup, silent enable switch, always persisted to `.dsh-agents-roles.json`.
+- **Per-role routing** — the `agent/request` waterfall rewrites each agent call
+  to its role's model and effort (effort applied only when the model offers
+  that level).
+- **Escalation** — `llm/stream` / `agent/request-error` climb to the next
+  configured role on failure.
+- **Auto routing** — user messages route themselves: images → the configured
+  **vision** role (the harness image gate passes because the composer
+  auto-selects the vision model and the model declares `input: [text, image]`);
+  text is classified against a **categories** map (word match) to its role;
+  unmatched messages use the base role.
+- **Workflow integration** — when the workflows plugin is enabled, workflow
+  agents are auto-routed by role (`@role:<id>` forces a role, `@no-role`
+  bypasses).
+- **Chat UX** — per-response model badge; the composer model pill is replaced
+  by a **read-only roles-ladder pill** (same UI as the standard selector,
+  display-only) when enabled; plain model select fallback when disabled.
+- **Settings page** — clean role list + popup editors, categories popup,
+  silent enable switch, always persisted to `.dsh-agents-roles.json`.
 - **Tools** — `roles_status`, `roles_configure`, `roles_spawn`, `roles_assign`.
 
-## Installation
+## Install
 
-### Prerequisites
+Requires a DSH profile (this repo's examples use the `desktop` profile — use
+whichever profile your app boots; `~/.dsh/profiles/<name>`). This package
+declares `dsh.bundle.patch`, so installing it activates it as a profile
+*bundle layer* automatically: `dsh plugin` appends it to the profile's
+`dsh.profile.bundles`, and the bundled `cordis.patch.yml` registers the loader
+entry at boot — no manual profile editing.
 
-- DSH Desktop (web GUI) running.
-- `git` on the machine (only needed to clone; the in-session path below also works by copying the two files).
+```powershell
+# install the package into the profile's node_modules (forwards to pnpm);
+# the bundle layer and loader entry are wired up automatically
+dsh plugin --profile desktop -- add https://github.com/dnviti/dsh-agents-roles.git
+```
 
-### Option A — Dynamic plugin (recommended, per session)
+```powershell
+# verify the entry composes, then restart the app
+dsh --profile desktop --dump-config | Select-String agents-roles
+```
 
-DSH loads this as a **dynamic Cordis plugin**. The two halves live in this repo:
+After restart:
 
-- `host.js` — Host half: routing, escalation, auto-routing, RPC handlers, tools.
-- `client.js` — Client half: settings page, composer pill, vision model switch, response badges.
+- the host half (routing, escalation, auto-routing, `roles_*` tools) is active
+  at startup;
+- the client half appears on **Settings → Roles** (configure the ladder there),
+  the composer shows the read-only roles pill, and every assistant response
+  carries a `provider/model` badge.
 
-Steps:
+> **Do not** also append the `dsh-agents-roles` insert to the profile's own
+> `cordis.patch.yml` — the bundle patch supplies it, and a duplicate loader
+> entry id fails boot.
+>
+> Plugin-set changes take effect on restart (package metadata is cached per
+> name).
 
-1. Clone the repo (or just copy `host.js` and `client.js`):
+### Alternative — dynamic plugin (per session)
+
+The plugin also works as a *dynamic* Cordis session plugin (no restart, no
+profile change), which is what this repo's earlier releases shipped as:
+
+1. Clone the repo (or just copy the two files):
    ```sh
    git clone https://github.com/dnviti/dsh-agents-roles.git
    ```
-
-2. In a DSH session, create the plugin with the Cordis plugin tooling (the `cordis_define` / `cordis_run` tools — available to any agent, or via the Plugins surface):
-   - **Host code:** paste the object literal from `host.js` — everything after `module.exports =` (it is a Cordis plugin object `{ name, apply }`).
-   - **Client code:** paste the object literal from `client.js` — everything after `module.exports =` (`{ name, inject: ['slots', 'timer'], apply }`).
+2. In a DSH session, create the plugin with the Cordis plugin tooling
+   (`cordis_define` / `cordis_run`):
+   - **Host code:** the object literal from `host.js` — everything after
+     `module.exports =` (a Cordis plugin object `{ name, apply }`).
+   - **Client code:** the object literal from `client.js` — everything after
+     `module.exports =` (`{ name, inject: ['slots', 'timer'], apply }`).
    - Activate the package (approve the Client half when prompted).
-
 3. Open **Settings → Roles** to configure the ladder.
-
-### Option B — Deployment bundle (host features at startup)
-
-Register the plugin as a profile bundle so the **host** half loads with the harness:
-
-1. Add the dependency to your DSH profile (`~/.dsh/profiles/desktop/package.json`):
-   ```json
-   {
-     "dependencies": {
-       "dsh-agents-roles": "github:dnviti/dsh-agents-roles.git"
-     },
-     "dsh": {
-       "profile": {
-         "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-agents-roles"]
-       }
-     }
-   }
-   ```
-2. Install the profile dependencies (`npm install` inside the profile directory) and restart DSH. The package's `cordis.patch.yml` registers the `agents-roles` host row at startup.
-
-> Note: the **client** features (settings page, composer roles pill, response badges) activate when the plugin runs as a dynamic plugin in a session (Option A) — the web client module system is session-scoped. For full coverage, run Option A on top of Option B.
 
 ## Configuration
 
-- **Roles, models, efforts, categories, default role:** **Settings → Roles** (or the `roles_configure` tool). Changes are **auto-persisted** to `.dsh-agents-roles.json` in the harness process working directory (e.g. the DSH Desktop app folder).
-- **Vision models:** declare image input in `~/.dsh/settings.yaml` under `llm-pi-ai.providers.<provider>.models`:
+- **Roles, models, efforts, categories, default role:** **Settings → Roles**
+  (or the `roles_configure` tool). Changes are **auto-persisted** to
+  `.dsh-agents-roles.json` in the harness process working directory (e.g. the
+  DSH Desktop app folder).
+- **Vision models:** declare image input in `~/.dsh/settings.yaml` under
+  `llm-pi-ai.providers.<provider>.models`:
   ```yaml
   llm-pi-ai:
     providers:
@@ -79,8 +102,11 @@ Register the plugin as a profile bundle so the **host** half loads with the harn
             name: minimax/minimax-m3
             input: [text, image]
   ```
-  Without `input: [text, image]` the harness treats the model as text-only and rejects image prompts.
-- **Workflow routing:** enabled automatically when the workflows plugin is present. Workflow agents pick a role via `@role:<id>` in their label/phase, or bypass routing with `@no-role`.
+  Without `input: [text, image]` the harness treats the model as text-only and
+  rejects image prompts.
+- **Workflow routing:** enabled automatically when the workflows plugin is
+  present. Workflow agents pick a role via `@role:<id>` in their label/phase,
+  or bypass routing with `@no-role`.
 
 ## Roles (oh-my-pi defaults)
 
@@ -97,14 +123,28 @@ Register the plugin as a profile bundle so the **host** half loads with the harn
 | task | Task |
 | advisor | Advisor |
 
-## Layout
+## Package layout
 
-- `host.js` — Host half (exports the Cordis plugin object).
-- `client.js` — Client half (exports the Cordis plugin object; injects `slots` and `timer`).
-- `cordis.patch.yml` — Deployment plugin row (used by Option B).
-- `package.json` — Package metadata (main = `host.js`).
+- `cordis.patch.yml` — the bundle patch: registers the `dsh-agents-roles`
+  loader entry (applied automatically while the package is a profile bundle).
+- `lib/index.js` — host half: routing, escalation, auto-routing, the `roles/*`
+  Remote endpoints, and the `roles_*` tools.
+- `lib/client.js` — client half: registers via `window.__ModuleLoader__.load`
+  and hooks the settings, composer, and chat slots.
+- `host.js` / `client.js` — the dynamic-plugin forms of the same halves
+  (kept for the dynamic installation path above).
 
-## Verification
+## Development
 
-- In a session, ask the agent to run `roles_status` — expect `enabled: true`, every role with a provider/model, `auto-vision: active`.
-- In the chat: the composer shows the read-only roles pill (current role · model); every assistant response carries a `provider/model` badge; attaching an image auto-routes to the vision model.
+No build step and no runtime npm dependencies: the bundle is hand-authored
+plain JavaScript (React via `require("react")`, timers via the Cordis `timer`
+service, styles via a managed `<style>` tag).
+
+```powershell
+node --check lib/client.js
+node --check lib/index.js
+```
+
+## License
+
+MIT — see [LICENSE](LICENSE).

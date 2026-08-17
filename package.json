@@ -1,23 +1,45 @@
-﻿{
-    "version":  "0.1.0",
-    "repository":  {
-                       "type":  "git",
-                       "url":  "git+https://github.com/dnviti/dsh-agents-roles.git"
-                   },
-    "files":  [
-                  "host.js",
-                  "client.js",
-                  "cordis.patch.yml",
-                  "README.md",
-                  "LICENSE"
-              ],
-    "name":  "dsh-agents-roles",
-    "private":  true,
-    "dsh":  {
-                "bundle":  {
-                               "patch":  "./cordis.patch.yml"
-                           }
-            },
-    "description":  "LLM agents roles ladder for DSH (oh-my-pi roles): per-role model routing, effort, auto vision/category routing, workflow integration, chat model badges.",
-    "main":  "host.js"
+{
+  "name": "dsh-agents-roles",
+  "version": "0.1.0",
+  "description": "LLM agents roles ladder for DSH (oh-my-pi roles): per-role model routing with effort, auto vision/category routing, ladder escalation, workflow integration, chat model badges, and a read-only roles selector in the composer.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "plugin",
+    "roles",
+    "ladder",
+    "llm",
+    "routing",
+    "oh-my-pi"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dnviti/dsh-agents-roles.git"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml"
+  ]
 }
