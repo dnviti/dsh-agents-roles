@@ -1,0 +1,7 @@
+﻿{
+    "private":  true,
+    "description":  "LLM agents roles ladder for DSH (oh-my-pi roles): per-role model routing, effort, auto vision/category routing, workflow integration, chat model badges.",
+    "name":  "dsh-agents-roles",
+    "version":  "0.1.0",
+    "main":  "host.js"
+}
