@@ -67,23 +67,10 @@ After restart:
 > Plugin-set changes take effect on restart (package metadata is cached per
 > name).
 
-### Alternative — dynamic plugin (per session)
-
-The plugin also works as a *dynamic* Cordis session plugin (no restart, no
-profile change), which is what this repo's earlier releases shipped as:
-
-1. Clone the repo (or just copy the two files):
-   ```sh
-   git clone https://github.com/dnviti/dsh-agents-roles.git
-   ```
-2. In a DSH session, create the plugin with the Cordis plugin tooling
-   (`cordis_define` / `cordis_run`):
-   - **Host code:** the object literal from `host.js` — everything after
-     `module.exports =` (a Cordis plugin object `{ name, apply }`).
-   - **Client code:** the object literal from `client.js` — everything after
-     `module.exports =` (`{ name, inject: ['slots', 'timer'], apply }`).
-   - Activate the package (approve the Client half when prompted).
-3. Open **Settings → Roles** to configure the ladder.
+> Earlier releases shipped the plugin as a *dynamic* per-session Cordis plugin
+> (paste the two halves into the cordis tooling, no restart or profile
+> change). That form is preserved in this repository's git history; the
+> current release is the static bundle form only.
 
 ## Configuration
 
@@ -131,8 +118,6 @@ profile change), which is what this repo's earlier releases shipped as:
   Remote endpoints, and the `roles_*` tools.
 - `lib/client.js` — client half: registers via `window.__ModuleLoader__.load`
   and hooks the settings, composer, and chat slots.
-- `host.js` / `client.js` — the dynamic-plugin forms of the same halves
-  (kept for the dynamic installation path above).
 
 ## Development
 
