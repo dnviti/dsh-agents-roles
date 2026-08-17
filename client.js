@@ -1,5 +1,5 @@
 ﻿// dsh-agents-roles — Client half (dynamic Cordis plugin function body).
-// Source of ladd-1/pkg-20 (current running package).
+// Source of ladd-1/pkg-21 (current running package).
 
 module.exports = function () {
 return {
@@ -51,13 +51,36 @@ return {
 /* per-response model badge in the chat */
 .roles-model-badge { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; color:var(--dsw-alias-label-secondary); white-space:nowrap; }
 
-/* composer roles/model selector */
+/* composer fallback model select (roles disabled) */
 .roles-composer-select {
   background:var(--dsw-alias-bg-layer-1); color:var(--dsw-alias-label-primary);
   border:1px solid var(--dsw-alias-border-l1); border-radius:8px; padding:4px 8px;
   font-size:12px; max-width:230px; min-width:130px; cursor:pointer;
 }
 .roles-composer-slot { color:var(--dsw-alias-label-secondary); font-size:12px; padding:0 4px; }
+
+/* composer roles ladder pill (matches the standard model selector UI) */
+.roles-pill-root { position:relative; min-width:0; display:inline-flex; }
+.roles-pill-trigger { min-width:0; max-width:240px; height:28px; color:var(--dsw-alias-label-secondary); cursor:pointer; background:0 0; border:none; border-radius:24px; outline:none; align-items:center; gap:4px; padding:0 4px 0 8px; font-size:13px; font-weight:500; line-height:20px; display:flex; font-family:inherit; }
+.roles-pill-trigger:hover:not(:disabled) { background:var(--dsw-alias-interactive-bg-hover); }
+.roles-pill-trigger:focus-visible { box-shadow:0 0 0 2px var(--dsw-alias-border-l3); }
+.roles-pill-trigger:disabled { color:var(--dsw-alias-label-dimmed); cursor:default; }
+.roles-pill-label { text-overflow:ellipsis; white-space:nowrap; min-width:0; overflow:hidden; }
+.roles-pill-chevron { color:var(--dsw-alias-label-caption); flex:none; font-size:10px; transition:transform .12s; }
+.roles-pill-chevron.roles-pill-open { transform:rotate(180deg); }
+.roles-pill-overlay { position:fixed; inset:0; z-index:19; background:transparent; }
+.roles-pill-menu { z-index:20; border:1px solid var(--dsw-alias-border-inverted); background:var(--dsw-specific-menu); width:min(240px,100vw - 32px); max-height:min(360px,100vh - 96px); box-shadow:var(--dsw-shadow-lv3); color:var(--dsw-alias-label-primary); border-radius:12px; display:flex; flex-direction:column; padding:4px; position:absolute; bottom:calc(100% + 8px); right:0; overflow:hidden; }
+.roles-pill-menu-title { color:var(--dsw-alias-label-tertiary); font-size:11px; text-transform:uppercase; letter-spacing:.05em; padding:6px 8px 4px; }
+.roles-pill-scroll { overflow-y:auto; }
+.roles-pill-row { display:flex; align-items:center; justify-content:space-between; gap:8px; border-radius:8px; padding:7px 8px; cursor:default; }
+.roles-pill-row:hover { background:var(--dsw-alias-interactive-bg-hover); }
+.roles-pill-selected { background:var(--dsw-alias-interactive-bg-hover); }
+.roles-pill-row-main { display:flex; flex-direction:column; min-width:0; }
+.roles-pill-row-name { font-size:13px; line-height:18px; }
+.roles-pill-row-desc { color:var(--dsw-alias-label-caption); font-size:12px; line-height:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.roles-pill-check { color:var(--dsw-alias-state-success-primary); flex:none; }
+.roles-pill-empty { color:var(--dsw-alias-label-tertiary); padding:10px; font-size:13px; }
+.roles-pill-note { color:var(--dsw-alias-label-tertiary); font-size:11px; padding:6px 8px 4px; border-top:1px solid var(--dsw-alias-border-l1); margin-top:4px; }
 
 /* modal */
 .roles-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:1000; }
@@ -89,9 +112,11 @@ return {
     }
 
     // ------------------------------------------------------------------
-    // Composer selector: replaces the standard model pill. With roles
-    // enabled it shows the current roles ladder (pick a role -> routes its
-    // model); with roles disabled it falls back to a plain model select.
+    // Composer selector: mirrors the standard model-selector UI but is
+    // READ-ONLY. With roles enabled it shows the current role as a pill;
+    // clicking opens the roles ladder as a display-only list (current role
+    // highlighted) â€” the user cannot select models or roles here. With roles
+    // disabled it falls back to a plain model select.
     // ------------------------------------------------------------------
     function RolesModelSelect(props) {
       const sessionId = props.sessionId;
@@ -99,6 +124,7 @@ return {
       const [cfg, setCfg] = React.useState(null);       // {enabled, tiers}
       const [role, setRole] = React.useState(null);     // {role, baseTier}
       const [models, setModels] = React.useState(null); // {current, list} (disabled fallback)
+      const [open, setOpen] = React.useState(false);
 
       const refresh = React.useCallback(() => {
         if (!sessionId) return;
@@ -160,32 +186,49 @@ return {
         }, opts);
       }
 
-      // Roles enabled: the current roles ladder.
+      // Roles enabled: the current roles ladder, shown like the standard
+      // model selector but read-only.
       const tiers = cfg.tiers || [];
       const currentRole = (role && role.role) || (tiers.length ? tiers[0].id : '');
-      const opts = tiers.map((t) => el('option', {
-        key: t.id,
-        value: t.id,
-        title: t.provider && t.model ? t.provider + '/' + t.model : 'not configured',
-      }, t.provider && t.model ? t.id + ' â€” ' + t.provider + '/' + t.model : t.id + ' (unconfigured)'));
-      return el('select', {
-        className: 'roles-composer-select',
-        disabled: locked,
-        value: currentRole,
-        title: 'Roles ladder â€” pick the role for this session',
-        onChange: (e) => {
-          const roleId = e.target.value;
-          if (!roleId) return;
-          host.call('roles.setSessionRole', { sessionId, role: roleId }).then((r) => { if (r && r.role !== undefined) setRole(r); }).catch(() => {});
-          const tier = tiers.find((t) => t.id === roleId);
-          if (tier && tier.provider && tier.model) {
-            const conn = ctx.get('connection');
-            if (conn && conn.api && conn.api.sessions && typeof conn.api.sessions.selectModel === 'function') {
-              conn.api.sessions.selectModel({ sessionId, provider: tier.provider, model: tier.model }).catch(() => {});
-            }
-          }
+      const currentTier = tiers.find((t) => t.id === currentRole) || null;
+      const triggerLabel = currentTier
+        ? (currentTier.provider && currentTier.model
+            ? currentTier.id + ' Â· ' + currentTier.provider + '/' + currentTier.model + (currentTier.reasoningEffort ? ' Â· ' + currentTier.reasoningEffort : '')
+            : currentTier.id + ' (unconfigured)')
+        : (currentRole || 'role');
+
+      return el('span', { className: 'roles-pill-root' },
+        el('button', {
+          type: 'button',
+          className: 'roles-pill-trigger',
+          'aria-label': 'Roles ladder (read-only), current ' + triggerLabel,
+          title: triggerLabel + ' â€” roles ladder (read-only)',
+          disabled: locked,
+          onClick: () => setOpen((o) => !o),
         },
-      }, opts);
+          el('span', { className: 'roles-pill-label' }, triggerLabel),
+          el('span', { className: 'roles-pill-chevron' + (open ? ' roles-pill-open' : '') }, 'â–¾'),
+        ),
+        open ? el('div', { className: 'roles-pill-overlay', onClick: () => setOpen(false) }) : null,
+        open ? el('div', { className: 'roles-pill-menu' },
+          el('div', { className: 'roles-pill-menu-title' }, 'Roles ladder'),
+          el('div', { className: 'roles-pill-scroll' },
+            tiers.length
+              ? tiers.map((t) => el('div', {
+                  key: t.id,
+                  className: 'roles-pill-row' + (t.id === currentRole ? ' roles-pill-selected' : ''),
+                },
+                  el('div', { className: 'roles-pill-row-main' },
+                    el('span', { className: 'roles-pill-row-name' }, (t.label || t.id) + ' (' + t.id + ')'),
+                    el('span', { className: 'roles-pill-row-desc' }, t.provider && t.model ? t.provider + '/' + t.model + (t.reasoningEffort ? ' Â· ' + t.reasoningEffort : '') : 'not configured'),
+                  ),
+                  t.id === currentRole ? el('span', { className: 'roles-pill-check' }, 'âœ“') : null,
+                ))
+              : el('div', { className: 'roles-pill-empty' }, 'no roles configured'),
+          ),
+          el('div', { className: 'roles-pill-note' }, 'Auto-routed by roles â€” read-only'),
+        ) : null,
+      );
     }
 
     // ------------------------------------------------------------------

@@ -1,6 +1,5 @@
 ﻿// dsh-agents-roles — Host half (dynamic Cordis plugin function body).
-// Source of ladd-1/pkg-20 (current running package).
-// This file is a module wrapper over the plugin's apply body.
+// Source of ladd-1/pkg-21 (current running package).
 
 module.exports = function () {
 return {
@@ -717,7 +716,7 @@ return {
 
     registerTool(
       'roles_configure',
-      'Configure the Roles ladder: ordered roles (oh-my-pi defaults: default, smol, slow, vision, plan, designer, commit, tiny, task, advisor) with a provider/model per role and an optional reasoningEffort per role (applied only when the model offers that level), plus the category->role map and default role. Action "enable" activates routing, "disable" stops it, "set" updates config, "reset" restores oh-my-pi defaults, "show" prints it. Roles without a provider/model pass calls through untouched. Changes are persisted automatically. When the workflows plugin is enabled, workflow agents are automatically routed by role (label/phase "@role:<id>" forces a role, "@no-role" bypasses). User messages auto-route: images go to the vision role (when configured) and the composer auto-selects its model so the harness accepts the image; text is classified against the categories map (word match) to its role; unmatched messages use the base role. The composer model selector shows the roles ladder when routing is enabled.',
+      'Configure the Roles ladder: ordered roles (oh-my-pi defaults: default, smol, slow, vision, plan, designer, commit, tiny, task, advisor) with a provider/model per role and an optional reasoningEffort per role (applied only when the model offers that level), plus the category->role map and default role. Action "enable" activates routing, "disable" stops it, "set" updates config, "reset" restores oh-my-pi defaults, "show" prints it. Roles without a provider/model pass calls through untouched. Changes are persisted automatically. When the workflows plugin is enabled, workflow agents are automatically routed by role (label/phase "@role:<id>" forces a role, "@no-role" bypasses). User messages auto-route: images go to the vision role (when configured) and the composer auto-selects its model so the harness accepts the image; text is classified against the categories map (word match) to its role; unmatched messages use the base role. The composer model selector shows the roles ladder (read-only) when routing is enabled.',
       {
         action: { type: 'string', enum: ['show', 'enable', 'disable', 'set', 'reset'], description: 'What to do. Defaults to "set" when roles/categories/defaultTier are supplied, else "show".' },
         roles: {
